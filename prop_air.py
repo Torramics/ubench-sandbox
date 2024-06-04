@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.6.13"
-app = marimo.App(layout_file="layouts/marimo-daq.grid.json")
+app = marimo.App()
 
 
 @app.cell
@@ -111,7 +111,7 @@ def __():
 def __(nidaqmx):
     def set_voltage(channel, voltage):
         with nidaqmx.Task() as task:
-            task.ao_channels.add_ao_voltage_chan(channel, min_val=-10.0, max_val=10.0)
+            task.ao_channels.add_ao_voltage_chan(channel, min_val=0.0, max_val=10.0)
             task.write(voltage)
 
             # logging.info(f"Voltage set to {voltage:.2f} V on channel {channel}")
