@@ -68,7 +68,7 @@ def __(max_voltage, min_voltage, mo):
         show_value = True,
         orientation = 'vertical',
         label = "### Amplitude"
-    )
+    ).form()
 
     amplitude
     return amplitude,
@@ -83,7 +83,7 @@ def __(mo):
         full_width = True, 
         show_value = True,
         orientation = 'horizontal',
-        label = "### Frequency / sec") # Frequency of breathing cycles per second
+        label = "### Frequency / sec").form() # Frequency of breathing cycles per second
     frequency
     return frequency,
 
@@ -95,7 +95,7 @@ def __(mo):
     , "square": "square", "triangle": "triangle"},
         # value="two",
         label="## Pick a waveform",
-    )
+    ).form()
 
     radiogroup
     return radiogroup,
@@ -123,7 +123,7 @@ def __(mo, np):
         show_value = True,
         orientation = 'vertical',
         label = "### Phase (rad)"
-                        )  # Phase in radians (0 to 2π)
+                        ).form()  # Phase in radians (0 to 2π)
     phase
     return phase,
 
