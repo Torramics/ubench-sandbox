@@ -15,25 +15,61 @@ def __():
 @app.cell
 def __(WaveformGenerator):
     device = "cDAQ1Mod1"
-    channel = "AO0"
+    # device = "SimDev1" # NI cRIO-9076
+
+    # channel = "AO0"
+    channel = "ao0"
+
     channel2 = "AO1"
+
 
     # update this here
     min_voltage = 0
-    max_voltage = 10
+    # max_voltage = 10
 
     # Instantiate the generator
     wave_gen = WaveformGenerator(device, channel)
-    wave_gen2 = WaveformGenerator(device, channel2)
-    return (
-        channel,
-        channel2,
-        device,
-        max_voltage,
-        min_voltage,
-        wave_gen,
-        wave_gen2,
-    )
+    # wave_gen2 = WaveformGenerator(device, channel2)
+    return channel, channel2, device, min_voltage, wave_gen
+
+
+@app.cell
+def __(mo):
+    max_voltage = mo.ui.number(
+        start = 0, 
+        stop = 10,
+        step = 0.2,
+        value = 10,
+        label = "### Max voltage out")
+
+    max_voltage
+    return max_voltage,
+
+
+@app.cell
+def __(mo):
+    min_press = mo.ui.number(
+        start = -14, 
+        stop = 0,
+        step = 0.2,
+        value = -2,
+        label = "### Min pressure (PSI)")
+
+    min_press
+    return min_press,
+
+
+@app.cell
+def __(mo):
+    max_press = mo.ui.number(
+        start = 0, 
+        stop = 14,
+        step = 0.2,
+        value = 2,
+        label = "### Max pressure (PSI)")
+
+    max_press
+    return max_press,
 
 
 @app.cell
@@ -51,21 +87,28 @@ def __():
 def __():
     def voltage(psi):
         """
-        returns voltage from psi conversion
+        Returns voltage from psi conversion as a float.
         """
-        return round(abs((1/2.8) * (psi + 14)))
+        return float(round(abs((1/2.8) * (psi + 14.0)), 2))
     return voltage,
 
 
 @app.cell
 def __(mo):
-    mo.md("# Proportional Air Wave Generator 💨")
+    mo.md("# Proportional Air Flow Controller 💨")
     return
 
 
 @app.cell
 def __(mo):
-    mo.md("## Flow 1")
+    # flow 1 state
+    getter, setter = mo.state(0.0)
+    return getter, setter
+
+
+@app.cell
+def __(getter, mo):
+    mo.md(f"{getter()}")
     return
 
 
@@ -81,21 +124,60 @@ def __(mo):
 
 
 @app.cell
-def __(mo):
+def __(mo, volts):
+    mo.md(f"{volts} V")
+    return
+
+
+@app.cell
+def __(getter, max_press, min_press, mo, setter):
     pressure =  mo.ui.slider(
         # start= min_voltage, 
         # stop = max_voltage,
-        start = -14,
-        stop = 14,
-        step = 1,
+        # start = -14.00,
+        start = min_press.value,
+        # stop = 14.00,
+        stop = max_press.value,
+        step = 0.05,
         full_width = True, 
         show_value = True,
-        orientation = 'vertical',
+        value = getter(),
+        # orientation = 'vertical',
+        on_change = setter,
         label = "### PSI"
     )
 
     pressure
     return pressure,
+
+
+@app.cell
+def __(getter, max_press, min_press, mo, setter):
+    pres_num = mo.ui.number(
+        # -14.00,
+        # 14.00,
+        start = min_press.value,
+        stop = max_press.value,
+        step = 0.05,
+        value=getter(),
+        on_change=setter,
+        # label = "### PSI"
+    )
+
+    pres_num
+    return pres_num,
+
+
+@app.cell
+def __():
+    # [pressure, pres_num, phase, frequency]
+    return
+
+
+@app.cell
+def __(button, mo):
+    mo.stop(not button.value, "Click 'run' to generate a random number")
+    return
 
 
 @app.cell
@@ -123,7 +205,7 @@ def __(mo):
             "constant": "constant"
         },
         # value="two",
-        label="## Pick a waveform",
+        label="## FLOW 1",
     )
 
     radiogroup
@@ -135,13 +217,14 @@ def __(
     button,
     duration,
     frequency,
+    max_voltage,
     phase,
     pressure,
     radiogroup,
     voltage,
     wave_gen,
 ):
-    volts = voltage(pressure.value)
+    volts = min(voltage(pressure.value), max_voltage.value)
 
     if radiogroup.value == 'sin':
         wave_gen.sin(frequency=frequency.value, amplitude=volts, phase=phase.value, duration=duration.value)
@@ -165,7 +248,7 @@ def __(mo, np):
         step = np.pi / 4,
         full_width = True, 
         show_value = True,
-        orientation = 'vertical',
+        # orientation = 'vertical',
         label = "### φ (rad)"
                         )  # Phase in radians (0 to 2π)
 
@@ -182,21 +265,18 @@ def __(mo):
 
 
 @app.cell
-def __(mo):
-    mo.md(rf"## Flow 2")
-    return
-
-
-@app.cell
-def __(mo):
+def __(max_press, min_press, mo):
     pressure2 =  mo.ui.slider(
         # start= min_voltage, 
         # stop = max_voltage,
-        start = -14,
-        stop = 14,
+        # start = -14,
+        # stop = 14,
+        start = min_press.value,
+        stop = max_press.value,
         step = 1,
         full_width = True, 
         show_value = True,
+        value = 0,
         orientation = 'vertical',
         label = "### PSI"
     )
@@ -230,7 +310,7 @@ def __(mo):
             "constant": "constant"
         },
         # value="two",
-        label="## Pick a waveform",
+        label="## FLOW 2",
     )
 
     radiogroup2
@@ -258,25 +338,25 @@ def __(mo, np):
 def __(
     button2,
     duration,
-    frequency,
     frequency2,
+    max_voltage,
     phase2,
     pressure2,
     radiogroup2,
     voltage,
-    wave_gen,
     wave_gen2,
 ):
-    volts2 = voltage(pressure2.value)
+    # volts2 = voltage(pressure2.value)
+    volts2 = min(voltage(pressure2.value), max_voltage.value)
 
     if radiogroup2.value == 'sin':
         wave_gen2.sin(frequency=frequency2.value, amplitude=volts2, phase=phase2.value, duration=duration.value)
     elif radiogroup2.value == 'square':
-        wave_gen.square(frequency=frequency.value, amplitude=volts2, phase=phase2.value, duration=duration.value)
+        wave_gen2.square(frequency=frequency2.value, amplitude=volts2, phase=phase2.value, duration=duration.value)
     elif radiogroup2.value == 'triangle':
-        wave_gen.triangle(frequency=frequency2.value, amplitude=volts2, phase=phase2.value, duration=duration.value)
+        wave_gen2.triangle(frequency=frequency2.value, amplitude=volts2, phase=phase2.value, duration=duration.value)
     elif radiogroup2.value == 'constant':
-        wave_gen.constant(voltage=volts2)
+        wave_gen2.constant(voltage=volts2)
 
     button2
     return volts2,
@@ -289,141 +369,13 @@ def __(mo):
 
 
 @app.cell
-def __():
-    # AGILENT PART
-    return
-
-
-@app.cell
-def __():
-    # import pyvisa as visa
-    # import time
-
-    # # Create a resource manager
-    # rm = visa.ResourceManager()
-    # # read_voltage = 0.0
-    # # Replace the VISA address below with the one you found
-    # visa_address = 'USB0::0x0957::0x1A07::MY53206340::INSTR'
-
-    # # Open a connection to the instrument
-    # dmm = rm.open_resource(visa_address)
-
-    # # Set a longer timeout (e.g., 5000 ms)
-    # dmm.timeout = 50000
-    # print(dmm.query('*IDN?'))
-    # # dmm.write("*RST")
-    # # dmm.write('DISP:VIEW TCHart')
-    # # dmm.write('CONF:VOLT:DC')
-    # # dmm.write('VOLT:DC:NPLC 100')
-    # # dmm.write("TRIG:SOUR INT")
-    # # Set the instrument to measure DC voltage
-    # # dmm.write('CONF:VOLT:DC')
-    # # read_voltage = dmm.query('READ?')
-
-    # # # Print the voltage 10 times per second
-    # # try:
-    # #     while True:
-    # #         try:
-    # #             read_voltage = instrument.query('READ?')
-    # #             print(f"Current Voltage: {read_voltage} V")
-    # #         except visa.VisaIOError as e:
-    # #             print(f"Error reading voltage: {e}")
-    # #         time.sleep(0.1)  # 0.1 seconds delay to print 10 times per second
-    # # except KeyboardInterrupt:
-    # #     print("Measurement stopped.")
-    return
-
-
-@app.cell
-def __():
-    return
-
-
-@app.cell
-def __():
-    # derp = dmm.query('MEAS:VOLT:DC?')
-    return
-
-
-@app.cell
-def __():
-    # mo.md(
-    #     f"""
-    #     Agilent voltage:
-    #     {derp} V
-    #     """
-    # )
-    return
-
-
-@app.cell
-def __():
-    # Close the connection
-    # instrument.close()
-    return
-
-
-@app.cell
-def __():
-    # import datetime as dt
-    # import matplotlib.pyplot as plt
-    # import matplotlib.animation as animation
-    # import pyvisa as visa
-
-    # # Create figure for plotting
-    # fig, ax = plt.subplots()
-    # xs = []
-    # ys = []
-
-    # # Create a resource manager
-    # rm = visa.ResourceManager()
-
-    # # Replace the VISA address below with the one you found
-    # visa_address = 'USB0::0x0957::0x1A07::MY53206340::INSTR'
-
-    # # Open a connection to the instrument
-    # instrument = rm.open_resource(visa_address)
-
-    # # Set the instrument to measure DC voltage
-    # instrument.write('CONF:VOLT:DC')
-
-    # # This function is called periodically from FuncAnimation
-    # def animate(i):
-    #     global xs, ys
-    #     try:
-    #         agilent_voltage = float(instrument.query('READ?'))
-    #         print(f"Voltage reading: {agilent_voltage} V")
-
-    #         current_time = dt.datetime.now().strftime('%H:%M:%S.%f')
-    #         xs.append(current_time)
-    #         ys.append(agilent_voltage)
-
-    #         xs = xs[-20:]
-    #         ys = ys[-20:]
-
-    #         ax.clear()
-    #         ax.plot(xs, ys)
-
-    #         plt.xticks(rotation=45, ha='right')
-    #         plt.subplots_adjust(bottom=0.30)
-    #         plt.title('Agilent Voltage over Time')
-    #         plt.ylabel('Voltage (V)')
-
-    #         print(f"Plot updated with {len(xs)} points.")
-    #     except Exception as e:
-    #         print(f"Error reading voltage: {e}")
-
-    # # Set up plot to call animate() function periodically
-    # ani = animation.FuncAnimation(fig, animate, interval=1000, cache_frame_data=False)
-
-    # # Render the plot using Marimo interactive viewer
-    # mo.mpl.interactive(fig)
-    return
-
-
-@app.cell
-def __():
-    # mo.mpl.interactive(plt.gca)
+def __(mo):
+    mo.md(
+        rf"""
+        # Analog Part
+        -----------------
+        """
+    )
     return
 
 

@@ -1,3 +1,8 @@
+# Run flow controller 
+- `python -m pipenv shell`
+- `python -m marimo run snb.py`
+
+
 # NI 9264
 Device ID = `cDAQ1Mod1`
 
